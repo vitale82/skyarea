@@ -129,20 +129,42 @@ if __name__ == '__main__':
 
     data = np.recfromtxt(args.samples, names=True)
 
+    # Find the right names 
+    if 'rightascension' in data.dtype.names::
+      raname='rightascension'
+    elif 'ra' in data.dtype.names::
+      raname='ra'
+    else:
+      parser.error(
+        "The posterior samples file '{0}' does not have a rightascension or ra"
+        "column. Exiting".format(args.samples))
+      sys.exit(1)
+    if 'declination' in data.dtype.names::
+      decname='declination'
+    elif 'dec' in data.dtype.names::
+      decname='dec'
+    else:
+      parser.error(
+        "The posterior samples file '{0}' does not have a declination or dec"
+        "column. Exiting".format(args.samples))
+      sys.exit(1)
     if args.enable_distance_map:
-        try:
-            try:
-                dist = data['dist']
-            except ValueError:
-                dist = data['distance']
-        except ValueError:
-            parser.error(
-                "The posterior samples file '{0}' does not have a distance "
-                "column. Cannot generate distance map.".format(args.samples))
-        pts = np.column_stack((data['ra'], data['dec'], dist))
+      if 'distance' in data.dtype.names::
+        distname='distance'
+      elif 'dist' in data.dtype.names::
+        distname='dist'
+      else:
+        parser.error(
+        "The posterior samples file '{0}' does not have a distance or dist"
+        "column. Cannot generate distance map.".format(args.samples))      
+        sys.exit(1)
+      dist=data[distname] 
+
+    if args.enable_distance_map:
+        pts = np.column_stack((data[raname], data[decname], dist))
         KDEClass = sac.Clustered3DKDEPosterior
     else:
-        pts = np.column_stack((data['ra'], data['dec']))
+        pts = np.column_stack((data[raname], data[decname]))
         KDEClass = sac.ClusteredSkyKDEPosterior
 
     if args.maxpts is not None:
